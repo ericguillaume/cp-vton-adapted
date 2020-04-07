@@ -1,6 +1,7 @@
 set -e
 
 cd /home/eric/cp-vton-adapted
+git checkout try_run_gcloud
+git pull origin try_run_gcloud --rebase
 source .venv/bin/activate
-git pull origin --rebase
 python3 train.py --workers 0 --keep_step 2 --decay_step 2 --save_count 2 --display_count 2 --use_gpu
