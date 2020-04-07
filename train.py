@@ -6,6 +6,9 @@ import torch.nn.functional as F
 import argparse
 import os
 import time
+
+from tqdm import tqdm
+
 from cp_dataset import CPDataset, CPDataLoader
 from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoint
 
@@ -42,6 +45,7 @@ def get_opt():
     return opt
 
 def train_gmm(opt, train_loader, model, board):
+    print("training GMM")
     #model.cuda()
     model.train()
 
@@ -53,7 +57,8 @@ def train_gmm(opt, train_loader, model, board):
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda step: 1.0 -
             max(0, step - opt.keep_step) / float(opt.decay_step + 1))
 
-    for step in range(opt.keep_step + opt.decay_step):
+    print("training steps")
+    for step in tqdm(range(opt.keep_step + opt.decay_step)):
         iter_start_time = time.time()
         inputs = train_loader.next_batch()
 
