@@ -121,6 +121,10 @@ class FeatureRegression(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
+        print("x.size() = {}".format(x.size()))
+        print("x.size(0) = {}".format(x.size(0)))
+        tt = x.view(x.size(0), -1)
+        print("tt.size() = {}".format(tt.size()))
         x = x.view(x.size(0), -1)
         x = self.linear(x)
         x = self.tanh(x)
@@ -418,6 +422,7 @@ class GMM(nn.Module):
         featureA = self.l2norm(featureA)
         featureB = self.l2norm(featureB)
         correlation = self.correlation(featureA, featureB)
+        print("correlation.size() = {}".format(correlation.size()))
 
         theta = self.regression(correlation)
         grid = self.gridGen(theta)

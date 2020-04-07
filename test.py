@@ -34,6 +34,7 @@ def get_opt():
     parser.add_argument('--checkpoint', type=str, default='', help='model checkpoint for test')
     parser.add_argument("--display_count", type=int, default = 1)
     parser.add_argument("--shuffle", action='store_true', help='shuffle input data')
+    parser.add_argument("--use_gpu", action='store_true')
 
     opt = parser.parse_args()
     return opt
