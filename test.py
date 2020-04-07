@@ -39,7 +39,8 @@ def get_opt():
     return opt
 
 def test_gmm(opt, test_loader, model, board):
-    #model.cuda()
+    if opt.use_gpu:
+        model.cuda()
     model.eval()
 
     base_name = os.path.basename(opt.checkpoint)
@@ -57,15 +58,26 @@ def test_gmm(opt, test_loader, model, board):
         iter_start_time = time.time()
 
         c_names = inputs['c_name']
-        im = inputs['image']#.cuda()
-        im_pose = inputs['pose_image']#.cuda()
-        im_h = inputs['head']#.cuda()
-        shape = inputs['shape']#.cuda()
-        agnostic = inputs['agnostic']#.cuda()
-        c = inputs['cloth']#.cuda()
-        cm = inputs['cloth_mask']#.cuda()
-        im_c =  inputs['parse_cloth']#.cuda()
-        im_g = inputs['grid_image']#.cuda()
+        im = inputs['image']
+        im_pose = inputs['pose_image']
+        im_h = inputs['head']
+        shape = inputs['shape']
+        agnostic = inputs['agnostic']
+        c = inputs['cloth']
+        cm = inputs['cloth_mask']
+        im_c =  inputs['parse_cloth']
+        im_g = inputs['grid_image']
+
+        if opt.use_gpu:
+            im = im.cuda()
+            im_pose = im_pose.cuda()
+            im_h = im_h.cuda()
+            shape = shape.cuda()
+            agnostic = agnostic.cuda()
+            c = c.cuda()
+            cm = cm.cuda()
+            im_c = im_c.cuda()
+            im_g = im_g.cuda()
 
         grid, theta = model(agnostic, c)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
@@ -87,7 +99,8 @@ def test_gmm(opt, test_loader, model, board):
 
 
 def test_tom(opt, test_loader, model, board):
-    #model.cuda()
+    if opt.use_gpu:
+        model.cuda()
     model.eval()
 
     base_name = os.path.basename(opt.checkpoint)
@@ -102,14 +115,20 @@ def test_tom(opt, test_loader, model, board):
         iter_start_time = time.time()
 
         im_names = inputs['im_name']
-        im = inputs['image']#.cuda()
+        im = inputs['image']
         im_pose = inputs['pose_image']
         im_h = inputs['head']
         shape = inputs['shape']
 
-        agnostic = inputs['agnostic']#.cuda()
-        c = inputs['cloth']#.cuda()
-        cm = inputs['cloth_mask']#.cuda()
+        agnostic = inputs['agnostic']
+        c = inputs['cloth']
+        cm = inputs['cloth_mask']
+
+        if opt.use_gpu:
+            im = im.cuda()
+            agnostic = agnostic.cuda()
+            c = c.cuda()
+            cm = cm.cuda()
 
         outputs = model(torch.cat([agnostic, c],1))
         p_rendered, m_composite = torch.split(outputs, 3,1)
@@ -147,12 +166,12 @@ def main():
     # create model & train
     if opt.stage == 'GMM':
         model = GMM(opt)
-        load_checkpoint(model, opt.checkpoint)
+        load_checkpoint(model, opt)
         with torch.no_grad():
             test_gmm(opt, train_loader, model, board)
     elif opt.stage == 'TOM':
         model = UnetGenerator(25, 4, 6, ngf=64, norm_layer=nn.InstanceNorm2d)
-        load_checkpoint(model, opt.checkpoint)
+        load_checkpoint(model, opt)
         with torch.no_grad():
             test_tom(opt, train_loader, model, board)
     else:

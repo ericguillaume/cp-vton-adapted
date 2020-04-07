@@ -409,8 +409,8 @@ class GMM(nn.Module):
         self.extractionB = FeatureExtraction(3, ngf=64, n_layers=3, norm_layer=nn.BatchNorm2d)
         self.l2norm = FeatureL2Norm()
         self.correlation = FeatureCorrelation()
-        self.regression = FeatureRegression(input_nc=192, output_dim=2*opt.grid_size**2, use_cuda=False)
-        self.gridGen = TpsGridGen(opt.fine_height, opt.fine_width, use_cuda=False, grid_size=opt.grid_size)
+        self.regression = FeatureRegression(input_nc=192, output_dim=2*opt.grid_size**2, use_cuda=opt.use_gpu)
+        self.gridGen = TpsGridGen(opt.fine_height, opt.fine_width, use_cuda=opt.use_gpu, grid_size=opt.grid_size)
 
     def forward(self, inputA, inputB):
         featureA = self.extractionA(inputA)
@@ -423,15 +423,17 @@ class GMM(nn.Module):
         grid = self.gridGen(theta)
         return grid, theta
 
-def save_checkpoint(model, save_path):
+def save_checkpoint(opt, model, save_path):
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path))
 
     torch.save(model.cpu().state_dict(), save_path)
-    #model.cuda()
+    if opt.use_gpu:
+        model.cuda()
 
-def load_checkpoint(model, checkpoint_path):
-    if not os.path.exists(checkpoint_path):
+def load_checkpoint(model, opt):
+    if not os.path.exists(opt.checkpoint):
         return
-    model.load_state_dict(torch.load(checkpoint_path))
-    #model.cuda()
+    model.load_state_dict(torch.load(opt.checkpoint))
+    if opt.use_gpu:
+        model.cuda()

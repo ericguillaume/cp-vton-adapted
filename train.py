@@ -40,13 +40,15 @@ def get_opt():
     parser.add_argument("--keep_step", type=int, default = 5000)
     parser.add_argument("--decay_step", type=int, default = 5000)
     parser.add_argument("--shuffle", action='store_true', help='shuffle input data')
+    parser.add_argument("--use_gpu", action='store_true')
 
     opt = parser.parse_args()
     return opt
 
 def train_gmm(opt, train_loader, model, board):
     print("training GMM")
-    #model.cuda()
+    if opt.use_gpu:
+        model.cuda()
     model.train()
 
     # criterion
@@ -62,15 +64,26 @@ def train_gmm(opt, train_loader, model, board):
         iter_start_time = time.time()
         inputs = train_loader.next_batch()
 
-        im = inputs['image']#.cuda()
-        im_pose = inputs['pose_image']#.cuda()
-        im_h = inputs['head']#.cuda()
-        shape = inputs['shape']#.cuda()
-        agnostic = inputs['agnostic']#.cuda()
-        c = inputs['cloth']#.cuda()
-        cm = inputs['cloth_mask']#.cuda()
-        im_c =  inputs['parse_cloth']#.cuda()
-        im_g = inputs['grid_image']#.cuda()
+        im = inputs['image']
+        im_pose = inputs['pose_image']
+        im_h = inputs['head']
+        shape = inputs['shape']
+        agnostic = inputs['agnostic']
+        c = inputs['cloth']
+        cm = inputs['cloth_mask']
+        im_c =  inputs['parse_cloth']
+        im_g = inputs['grid_image']
+
+        if opt.use_gpu:
+            im = im.cuda()
+            im_pose = im_pose.cuda()
+            im_h = im_h.cuda()
+            shape = shape.cuda()
+            agnostic = agnostic.cuda()
+            c = c.cuda()
+            cm = cm.cuda()
+            im_c = im_c.cuda()
+            im_g = im_g.cuda()
 
         grid, theta = model(agnostic, c)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
@@ -93,11 +106,12 @@ def train_gmm(opt, train_loader, model, board):
             print('step: %8d, time: %.3f, loss: %4f' % (step+1, t, loss.item()))
 
         if (step+1) % opt.save_count == 0:
-            save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
+            save_checkpoint(opt, model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 
 def train_tom(opt, train_loader, model, board):
-    #model.cuda()
+    if opt.use_gpu:
+        model.cuda()
     model.train()
 
     # criterion
@@ -114,14 +128,20 @@ def train_tom(opt, train_loader, model, board):
         iter_start_time = time.time()
         inputs = train_loader.next_batch()
 
-        im = inputs['image']#.cuda()
+        im = inputs['image']
         im_pose = inputs['pose_image']
         im_h = inputs['head']
         shape = inputs['shape']
 
-        agnostic = inputs['agnostic']#.cuda()
-        c = inputs['cloth']#.cuda()
-        cm = inputs['cloth_mask']#.cuda()
+        agnostic = inputs['agnostic']
+        c = inputs['cloth']
+        cm = inputs['cloth_mask']
+
+        if opt.use_gpu:
+            im = im.cuda()
+            agnostic = agnostic.cuda()
+            c = c.cuda()
+            cm = cm.cuda()
 
         outputs = model(torch.cat([agnostic, c],1))
         p_rendered, m_composite = torch.split(outputs, 3,1)
@@ -179,13 +199,13 @@ def main():
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             load_checkpoint(model, opt.checkpoint)
         train_gmm(opt, train_loader, model, board)
-        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_final.pth'))
+        save_checkpoint(opt, model, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_final.pth'))
     elif opt.stage == 'TOM':
         model = UnetGenerator(25, 4, 6, ngf=64, norm_layer=nn.InstanceNorm2d)
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             load_checkpoint(model, opt.checkpoint)
         train_tom(opt, train_loader, model, board)
-        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
+        save_checkpoint(opt, model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
         raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
 
