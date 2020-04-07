@@ -1,0 +1,25 @@
+set -e
+
+# clone github
+cd /home/eric/
+rm -rf cp-vton-adapted
+git clone https://github.com/ericguillaume/cp-vton-adapted.git
+cd cp-vton-adapted
+git checkout master
+
+# extract data
+rm -rf /home/eric/dev/data/cp-vton-adapted-data
+mkdir -p /home/eric/dev/data
+cd /home/eric/dev/data
+tar -xzvf /tmp/cp-vton-adapted-data.tar.gz
+
+# link data
+cd /home/eric/cp-vton-adapted
+ln -s /home/eric/dev/data/cp-vton-adapted-data/train ./data/train
+ln -s /home/eric/dev/data/cp-vton-adapted-data/test ./data/test
+
+# install requirements
+cd /home/eric/cp-vton-adapted
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip3 install --ignore-installed -r requirements.txt
