@@ -116,7 +116,7 @@ def train_tom(opt, train_loader, model, board):
 
     # criterion
     criterionL1 = nn.L1Loss()
-    criterionVGG = VGGLoss()
+    criterionVGG = VGGLoss(use_cuda=opt.use_gpu)
     criterionMask = nn.L1Loss()
 
     # optimizer

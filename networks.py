@@ -96,7 +96,7 @@ class FeatureCorrelation(nn.Module):
         return correlation_tensor
 
 class FeatureRegression(nn.Module):
-    def __init__(self, input_nc=512,output_dim=6, use_cuda=False):
+    def __init__(self, input_nc=512,output_dim=6, use_cuda=True):
         super(FeatureRegression, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(input_nc, 512, kernel_size=4, stride=2, padding=1),
@@ -144,7 +144,7 @@ class AffineGridGen(nn.Module):
         return F.affine_grid(theta, out_size)
 
 class TpsGridGen(nn.Module):
-    def __init__(self, out_h=256, out_w=192, use_regular_grid=True, grid_size=3, reg_factor=0, use_cuda=False):
+    def __init__(self, out_h=256, out_w=192, use_regular_grid=True, grid_size=3, reg_factor=0, use_cuda=True):
         super(TpsGridGen, self).__init__()
         self.out_h, self.out_w = out_h, out_w
         self.reg_factor = reg_factor
@@ -387,10 +387,11 @@ class Vgg19(nn.Module):
         return out
 
 class VGGLoss(nn.Module):
-    def __init__(self, layids = None):
+    def __init__(self, layids = None, use_cuda=True):
         super(VGGLoss, self).__init__()
         self.vgg = Vgg19()
-        #self.vgg.cuda()
+        if use_cuda:
+            self.vgg.cuda()
         self.criterion = nn.L1Loss()
         self.weights = [1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0]
         self.layids = layids
